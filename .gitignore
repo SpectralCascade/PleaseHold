@@ -1,0 +1,7 @@
+
+*.o
+*.dll
+*.exe
+test_output.csv
+Ossium
+PleaseHold.depend
