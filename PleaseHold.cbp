@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="Please Hold" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/PleaseHold" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-D DEBUG" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/PleaseHold" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Linker>
+			<Add option="-lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net" />
+		</Linker>
+		<Unit filename="Ossium/src/Ossium.h" />
+		<Unit filename="Ossium/src/Ossium/animator.cpp" />
+		<Unit filename="Ossium/src/Ossium/animator.h" />
+		<Unit filename="Ossium/src/Ossium/audio.cpp" />
+		<Unit filename="Ossium/src/Ossium/audio.h" />
+		<Unit filename="Ossium/src/Ossium/basics.cpp" />
+		<Unit filename="Ossium/src/Ossium/basics.h" />
+		<Unit filename="Ossium/src/Ossium/callback.h" />
+		<Unit filename="Ossium/src/Ossium/circularbuffer.h" />
+		<Unit filename="Ossium/src/Ossium/colours.cpp" />
+		<Unit filename="Ossium/src/Ossium/colours.h" />
+		<Unit filename="Ossium/src/Ossium/config.cpp" />
+		<Unit filename="Ossium/src/Ossium/config.h" />
+		<Unit filename="Ossium/src/Ossium/csvdata.cpp" />
+		<Unit filename="Ossium/src/Ossium/csvdata.h" />
+		<Unit filename="Ossium/src/Ossium/curves.cpp" />
+		<Unit filename="Ossium/src/Ossium/curves.h" />
+		<Unit filename="Ossium/src/Ossium/delta.cpp" />
+		<Unit filename="Ossium/src/Ossium/delta.h" />
+		<Unit filename="Ossium/src/Ossium/ecs.cpp" />
+		<Unit filename="Ossium/src/Ossium/ecs.h" />
+		<Unit filename="Ossium/src/Ossium/events.cpp" />
+		<Unit filename="Ossium/src/Ossium/events.h" />
+		<Unit filename="Ossium/src/Ossium/font.cpp" />
+		<Unit filename="Ossium/src/Ossium/font.h" />
+		<Unit filename="Ossium/src/Ossium/fsm.h" />
+		<Unit filename="Ossium/src/Ossium/helpermacros.h" />
+		<Unit filename="Ossium/src/Ossium/init.cpp" />
+		<Unit filename="Ossium/src/Ossium/init.h" />
+		<Unit filename="Ossium/src/Ossium/input.cpp" />
+		<Unit filename="Ossium/src/Ossium/input.h" />
+		<Unit filename="Ossium/src/Ossium/inputgui.cpp" />
+		<Unit filename="Ossium/src/Ossium/inputgui.h" />
+		<Unit filename="Ossium/src/Ossium/jsondata.cpp" />
+		<Unit filename="Ossium/src/Ossium/jsondata.h" />
+		<Unit filename="Ossium/src/Ossium/keyboard.cpp" />
+		<Unit filename="Ossium/src/Ossium/keyboard.h" />
+		<Unit filename="Ossium/src/Ossium/mathconsts.h" />
+		<Unit filename="Ossium/src/Ossium/metarect.h" />
+		<Unit filename="Ossium/src/Ossium/mouse.cpp" />
+		<Unit filename="Ossium/src/Ossium/mouse.h" />
+		<Unit filename="Ossium/src/Ossium/pixeleffects.cpp" />
+		<Unit filename="Ossium/src/Ossium/pixeleffects.h" />
+		<Unit filename="Ossium/src/Ossium/primitives.cpp" />
+		<Unit filename="Ossium/src/Ossium/primitives.h" />
+		<Unit filename="Ossium/src/Ossium/randutils.cpp" />
+		<Unit filename="Ossium/src/Ossium/randutils.h" />
+		<Unit filename="Ossium/src/Ossium/renderer.cpp" />
+		<Unit filename="Ossium/src/Ossium/renderer.h" />
+		<Unit filename="Ossium/src/Ossium/resourcecontroller.h" />
+		<Unit filename="Ossium/src/Ossium/rig.h" />
+		<Unit filename="Ossium/src/Ossium/schemamodel.h" />
+		<Unit filename="Ossium/src/Ossium/serialisation.cpp" />
+		<Unit filename="Ossium/src/Ossium/serialisation.h" />
+		<Unit filename="Ossium/src/Ossium/sprite.cpp" />
+		<Unit filename="Ossium/src/Ossium/sprite.h" />
+		<Unit filename="Ossium/src/Ossium/statesprite.cpp" />
+		<Unit filename="Ossium/src/Ossium/statesprite.h" />
+		<Unit filename="Ossium/src/Ossium/stringintern.h" />
+		<Unit filename="Ossium/src/Ossium/testmodules.cpp" />
+		<Unit filename="Ossium/src/Ossium/testmodules.h" />
+		<Unit filename="Ossium/src/Ossium/text.cpp" />
+		<Unit filename="Ossium/src/Ossium/text.h" />
+		<Unit filename="Ossium/src/Ossium/texture.cpp" />
+		<Unit filename="Ossium/src/Ossium/texture.h" />
+		<Unit filename="Ossium/src/Ossium/texturepack.cpp" />
+		<Unit filename="Ossium/src/Ossium/texturepack.h" />
+		<Unit filename="Ossium/src/Ossium/time.cpp" />
+		<Unit filename="Ossium/src/Ossium/time.h" />
+		<Unit filename="Ossium/src/Ossium/transform.cpp" />
+		<Unit filename="Ossium/src/Ossium/transform.h" />
+		<Unit filename="Ossium/src/Ossium/tree.h" />
+		<Unit filename="Ossium/src/Ossium/vector.cpp" />
+		<Unit filename="Ossium/src/Ossium/vector.h" />
+		<Unit filename="Ossium/src/Ossium/window.cpp" />
+		<Unit filename="Ossium/src/Ossium/window.h" />
+		<Unit filename="main.cpp" />
+		<Unit filename="src/button.cpp" />
+		<Unit filename="src/button.h" />
+		<Unit filename="src/game.cpp" />
+		<Unit filename="src/game.h" />
+		<Unit filename="src/switchboard.cpp" />
+		<Unit filename="src/switchboard.h" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<lib_finder disable_auto="1" />
+			<debugger />
+			<DoxyBlocks>
+				<comment_style block="0" line="0" />
+				<doxyfile_project />
+				<doxyfile_build />
+				<doxyfile_warnings />
+				<doxyfile_output />
+				<doxyfile_dot />
+				<general />
+			</DoxyBlocks>
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
