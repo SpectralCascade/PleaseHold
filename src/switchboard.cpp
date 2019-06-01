@@ -3,12 +3,66 @@
 
 using namespace Ossium;
 
+NodeClient::NodeClient(int patience, void* g, TelephoneNode* n)
+{
+    game = g;
+    score = clamp(MAX_PATIENCE - patience, 5, MAX_PATIENCE);
+    waitTime = MIN_WAIT_TIME + (patience * 1000);
+    node = n;
+    node->SetClient(this);
+}
+
+void NodeClient::Update()
+{
+    if (!alive)
+    {
+        return;
+    }
+    if (linkChanges > 2)
+    {
+        clock.SetTime(waitTime + 1);
+        switch (((Game*)game)->rng->Int(0, 4))
+        {
+        case 0:
+            deathMessage = "Ugh, I've been interrupted far too many times, I'm off!";
+            break;
+        case 1:
+            deathMessage = "Interrupted AGAIN?! Terrible! I'm off...";
+            break;
+        case 2:
+            deathMessage = "Damn, the line keeps cutting out, I'm off.";
+            break;
+        default:
+            deathMessage = "I can't cope with these interruptions, I'm off!";
+            break;
+        }
+    }
+    clock.Update(delta.Time());
+    if (clock.GetTime() > waitTime)
+    {
+        if (connected)
+        {
+            /// Increment score for a successful call
+            ((Game*)game)->score += score;
+        }
+        else
+        {
+            /// Decrement score for an unsuccessful call
+            ((Game*)game)->score -= (MAX_PATIENCE / 3) * 2;
+        }
+        alive = false;
+    }
+}
+
 void NodeClient::OnLink()
 {
+    clock.SetTime(0);
 }
 
 void NodeClient::OnUnlink()
 {
+    clock.SetTime(0);
+    linkChanges++;
 }
 
 REGISTER_COMPONENT(TrunkLine);
@@ -58,12 +112,15 @@ void TrunkLine::SetRoot(Point p)
     holderSprite->position = p;
 }
 
-void TrunkLine::LinkTo(TelephoneNode* node)
+void TrunkLine::LinkTo(TelephoneNode* n)
 {
-    Unlink();
-    SetPosition(node->position + socket_offset);
-    linked = node->GetId();
-    node = node;
+    if (IsLinked())
+    {
+        Unlink();
+    }
+    SetPosition(n->position + socket_offset);
+    linked = n->GetId();
+    node = n;
     node->Link(this);
     SetSource(&pluggedIn);
     SetMod(colour);
@@ -73,6 +130,7 @@ void TrunkLine::LinkTo(TelephoneNode* node)
 
 void TrunkLine::Unlink()
 {
+    OnClient(nullptr);
     if (node != nullptr)
     {
         node->Unlink();
@@ -98,8 +156,36 @@ void TrunkLine::SetColour(SDL_Color c)
     bodySprite->SetMod(c);
 }
 
+bool TrunkLine::IsActive()
+{
+    return client != nullptr;
+}
+
 void TrunkLine::OnClient(NodeClient* c)
 {
+    client = c;
+    if (client != nullptr)
+    {
+        if (connection->line1 == this)
+        {
+            connection->lamp1->ChangeSubState(1);
+        }
+        else
+        {
+            connection->lamp2->ChangeSubState(1);
+        }
+    }
+    else
+    {
+        if (connection->line1 == this)
+        {
+            connection->lamp1->ChangeSubState(0);
+        }
+        else
+        {
+            connection->lamp2->ChangeSubState(0);
+        }
+    }
 }
 
 void TrunkLine::SetPosition(Point p)
@@ -209,7 +295,7 @@ void TrunkLine::OnPointerUp(const MouseInput& data)
                 if (!node->IsLinked())
                 {
                     LinkTo(node);
-                    /// play plug in sound
+                    /// play plug-in sound
                     hit = true;
                 }
                 break;
@@ -245,8 +331,7 @@ void TelephoneNode::OnInitGraphics(Renderer* renderer, int layer)
     {
         lamp.LoadAndInit("Textures/socket_lamp.png", *renderer, SDL_GetWindowPixelFormat(renderer->GetWindow()->GetWindow()));
     }
-    SetSource(&lamp);
-    SetClip(0, 0, 64, 36);
+    AddState("lamp", &lamp, true, 2);
     socketSprite->SetSource(&socket);
     numberText = entity->AddComponent<Text>(renderer, 2);
     numberText->SetColor(colours::BLACK);
@@ -268,10 +353,10 @@ void TelephoneNode::Link(TrunkLine* trunkLine)
     link = trunkLine;
     if (link != nullptr)
     {
-        link->node = this;
         if (client != nullptr)
         {
             client->OnLink();
+            link->OnClient(client);
         }
     }
 }
@@ -300,15 +385,26 @@ bool TelephoneNode::IsLinked()
 
 void TelephoneNode::SetClient(NodeClient* c)
 {
-    client = c;
-    if (IsLinked())
+    if (client != nullptr)
     {
-        link->OnClient(client);
-        SetClip(0, 36, 64, 36);
+        if (IsLinked())
+        {
+            link->OnClient(nullptr);
+        }
+        client->alive = false;
+    }
+    client = c;
+    if (client != nullptr)
+    {
+        if (IsLinked())
+        {
+            link->OnClient(client);
+        }
+        ChangeSubState(1);
     }
     else
     {
-        SetClip(0, 0, 64, 36);
+        ChangeSubState(0);
     }
 }
 
@@ -336,12 +432,23 @@ void Connection::OnInitGraphics(Renderer* renderer, int layer)
     line2 = entity->AddComponent<TrunkLine>(renderer, layer >= 0 ? layer + 1 : -1);
     line1->connection = this;
     line2->connection = this;
+    line2->SetColour(colours::GREEN);
+    lamp1 = entity->AddComponent<StateSprite>(renderer, layer);
+    lamp2 = entity->AddComponent<StateSprite>(renderer, layer);
+    if (!lamp.Initialised())
+    {
+        lamp.LoadAndInit("Textures/line_lamp.png", *renderer, SDL_GetWindowPixelFormat(renderer->GetWindow()->GetWindow()));
+    }
+    lamp1->AddState("lamp", &lamp, true, 2);
+    lamp2->AddState("lamp", &lamp, true, 2);
 }
 
 void Connection::SetRoot(Point p)
 {
     line1->SetRoot(Point(p.x - 16, p.y));
     line2->SetRoot(Point(p.x + 16, p.y));
+    lamp1->position = Point(p.x - 16, p.y + 21);
+    lamp2->position = Point(lamp1->position.x + 32, lamp1->position.y);
 }
 
 void Connection::Reset()

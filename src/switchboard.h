@@ -13,8 +13,31 @@ class TelephoneNode;
 class NodeClient
 {
 public:
+    NodeClient(int patience, void* g, TelephoneNode* n);
+
     void OnLink();
     void OnUnlink();
+
+    void Update();
+
+    bool alive = true;
+
+    string deathMessage;
+
+    void* game;
+
+    TelephoneNode* node;
+
+private:
+    int linkChanges = 0;
+
+    Clock clock;
+
+    Uint32 waitTime;
+
+    bool connected = false;
+
+    int score = 0;
 
 };
 
@@ -31,7 +54,7 @@ public:
     void OnInitGraphics(Renderer* renderer, int layer);
 
     /// Links this trunkLine to a specified node
-    void LinkTo(TelephoneNode* node);
+    void LinkTo(TelephoneNode* n);
     /// Unlinks this trunkLine.
     void Unlink();
 
@@ -68,6 +91,8 @@ public:
     Connection* connection = nullptr;
 
 private:
+    NodeClient* client = nullptr;
+
     /// Where the trunkLine sits
     Point root;
 
@@ -153,10 +178,10 @@ public:
 
     void* game;
 
-private:
     StateSprite* lamp1;
     StateSprite* lamp2;
 
+private:
     static Image lamp;
 
 };
