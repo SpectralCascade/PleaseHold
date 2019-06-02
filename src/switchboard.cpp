@@ -3,7 +3,7 @@
 
 using namespace Ossium;
 
-NodeClient::NodeClient(int patience, void* g, TelephoneNode* n, int targetId)
+NodeClient::NodeClient(int patience, void* g, TelephoneNode* n, int targetId, Clock* mainClock)
 {
     game = g;
     score = clamp(MAX_PATIENCE - patience, 5, MAX_PATIENCE) * 10;
@@ -11,6 +11,7 @@ NodeClient::NodeClient(int patience, void* g, TelephoneNode* n, int targetId)
     node = n;
     targetExt = targetId;
     node->SetClient(this);
+    gameClock = mainClock;
     deathMessage = "*Call Finished*";
 }
 
@@ -43,8 +44,9 @@ void NodeClient::Update()
             deathMessage = "I can't cope with these interruptions, I'm off!";
             break;
         }
+        connected = false;
     }
-    clock.Update(delta.Time());
+    clock.Update(gameClock->GetDeltaTime());
     if (clock.GetTime() > waitTime)
     {
         if (connected)
@@ -146,7 +148,7 @@ void TrunkLine::LinkTo(TelephoneNode* n)
     bodySprite->SetSource(nullptr);
     if (client != nullptr)
     {
-        SDL_Log("%s", client->requestMessage.c_str());
+        theGame->Log("[ext " + ToString(client->node->GetId()) + "] > \"" + client->requestMessage + "\"", colours::YELLOW);
     }
     else
     {
@@ -156,7 +158,7 @@ void TrunkLine::LinkTo(TelephoneNode* n)
             if (node->GetId() == other->client->GetTargetExt())
             {
                 /// Reset connection
-                SDL_Log("CONNECTION ESTABLISHED between %d and %d", node->GetId(), other->node->GetId());
+                theGame->Log("CONNECTION ESTABLISHED between " + ToString(node->GetId()) + " and " + ToString(other->node->GetId()), colours::GREEN);
                 other->client->SetConnected(true);
                 connection->lamp2->ChangeSubState(1);
                 connection->lamp1->ChangeSubState(1);
@@ -164,7 +166,8 @@ void TrunkLine::LinkTo(TelephoneNode* n)
             else
             {
                 other->client->alive = false;
-                other->client->deathMessage = "You connected the wrong extension :(";
+                other->client->deathMessage = "Who is this? What?! I'm hanging up >:(";
+                theGame->score -= (MAX_PATIENCE / 3) * 10;
             }
         }
     }
@@ -316,6 +319,14 @@ void TrunkLine::OnPointerEvent(const MouseInput& data)
 
 void TrunkLine::OnPointerDown(const MouseInput& data)
 {
+    if (theGame->IsTutorial())
+    {
+        int stage = theGame->tutorial->stage;
+        if (stage != FINISHED && stage != TutorialStages::AWAIT_LINKAGE && stage != TutorialStages::AWAIT_DISCONNECT && stage != TutorialStages::AWAIT_CONNECTION)
+        {
+            return;
+        }
+    }
     if (IsLinked())
     {
         Unlink();
@@ -326,6 +337,14 @@ void TrunkLine::OnPointerDown(const MouseInput& data)
 
 void TrunkLine::OnPointerUp(const MouseInput& data)
 {
+    if (theGame->IsTutorial())
+    {
+        int stage = theGame->tutorial->stage;
+        if (stage != FINISHED && stage != TutorialStages::AWAIT_LINKAGE && stage != TutorialStages::AWAIT_DISCONNECT && stage != TutorialStages::AWAIT_CONNECTION)
+        {
+            return;
+        }
+    }
     if (data.type == MOUSE_BUTTON_LEFT)
     {
         /// Link up with node if touching one
@@ -337,6 +356,29 @@ void TrunkLine::OnPointerUp(const MouseInput& data)
                 if (!node->IsLinked())
                 {
                     LinkTo(node);
+                    Tutorial* t = theGame->tutorial;
+                    if (theGame->IsTutorial() && node->IsActive() && t->stage == TutorialStages::AWAIT_LINKAGE && !t->HasPopups())
+                    {
+                        t->stage = TutorialStages::LINKAGE;
+                        t->AddPopup("Excellent! Now we're connected to the caller we can listen to their request.");
+                        t->AddPopup("Below is the message board, showing recent messages from callers and other information.",
+                                    Point(1024 / 2, 768 / 3 * 2),
+                                    Rect(100, 600, 800, 300)
+                        );
+                        t->AddPopup("This particular caller wants us to connect them to extension " + ToString(node->GetClient()->GetTargetExt()) + ".",
+                                    Point(1024 / 2, 768 / 3 * 2),
+                                    Rect(100, 600, 800, 300)
+                        );
+                        t->AddPopup("In order to do this, we must use the trunk line next to our caller's trunk line.",
+                                    Point(1024 / 2, 768 / 3 * 2),
+                                    Rect(100, 600, 800, 300)
+                        );
+                        t->AddPopup("Go ahead and connect the correct trunk line to extension " + ToString(node->GetClient()->GetTargetExt()) + ".",
+                                    Point(1024 / 2, 768 / 3 * 2),
+                                    Rect(100, 600, 800, 300)
+                        );
+                        t->ShowPopup();
+                    }
                     /// play plug-in sound
                     hit = true;
                 }
@@ -356,6 +398,14 @@ void TrunkLine::OnPointerUp(const MouseInput& data)
 
 void TrunkLine::OnDrag(const MouseInput& data)
 {
+    if (theGame->IsTutorial())
+    {
+        int stage = theGame->tutorial->stage;
+        if (stage != FINISHED && stage != TutorialStages::AWAIT_LINKAGE && stage != TutorialStages::AWAIT_DISCONNECT && stage != TutorialStages::AWAIT_CONNECTION)
+        {
+            return;
+        }
+    }
     SetPosition(Point(data.x, data.y));
 }
 
@@ -380,6 +430,11 @@ void TelephoneNode::OnInitGraphics(Renderer* renderer, int layer)
     numberText->SetRenderMode(RENDERTEXT_BLEND);
     numberText->SetText(ToString(id));
     numberText->TextToTexture(*renderer, font, 12);
+}
+
+NodeClient* TelephoneNode::GetClient()
+{
+    return client;
 }
 
 void TelephoneNode::SetPos(Point p)

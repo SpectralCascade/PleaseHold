@@ -13,7 +13,7 @@ class TelephoneNode;
 class NodeClient
 {
 public:
-    NodeClient(int patience, void* g, TelephoneNode* n, int targetId);
+    NodeClient(int patience, void* g, TelephoneNode* n, int targetId, Clock* mainClock);
 
     void OnLink();
     void OnUnlink();
@@ -39,6 +39,8 @@ private:
     int targetExt;
 
     Clock clock;
+
+    Clock* gameClock;
 
     Uint32 waitTime;
 
