@@ -100,19 +100,19 @@ void TrunkLine::OnInitGraphics(Renderer* renderer, int layer)
     {
         if (!head.Initialised())
         {
-            head.LoadAndInit("Textures/trs_jack.png", *renderer, SDL_PIXELFORMAT_ARGB8888);
+            head.LoadAndInit("Textures/trs_jack.png", *renderer);
         }
         if (!body.Initialised())
         {
-            body.LoadAndInit("Textures/trs_jack_body.png", *renderer, SDL_PIXELFORMAT_ARGB8888);
+            body.LoadAndInit("Textures/trs_jack_body.png", *renderer);
         }
         if (!pluggedIn.Initialised())
         {
-            pluggedIn.LoadAndInit("Textures/trs_jack_plugged_in.png", *renderer, SDL_PIXELFORMAT_ARGB8888);
+            pluggedIn.LoadAndInit("Textures/trs_jack_plugged_in.png", *renderer);
         }
         if (!holder.Initialised())
         {
-            holder.LoadAndInit("Textures/trs_jack_holder.png", *renderer, SDL_PIXELFORMAT_ARGB8888);
+            holder.LoadAndInit("Textures/trs_jack_holder.png", *renderer);
         }
         bodySprite->SetSource(&body);
         holderSprite->SetSource(&holder);
@@ -367,11 +367,11 @@ void TelephoneNode::OnInitGraphics(Renderer* renderer, int layer)
     socketSprite = entity->AddComponent<Texture>(renderer, layer);
     if (!socket.Initialised())
     {
-        socket.LoadAndInit("Textures/socket.png", *renderer, SDL_GetWindowPixelFormat(renderer->GetWindow()->GetWindow()));
+        socket.LoadAndInit("Textures/socket.png", *renderer);
     }
     if (!lamp.Initialised())
     {
-        lamp.LoadAndInit("Textures/socket_lamp.png", *renderer, SDL_GetWindowPixelFormat(renderer->GetWindow()->GetWindow()));
+        lamp.LoadAndInit("Textures/socket_lamp.png", *renderer);
     }
     AddState("lamp", &lamp, true, 2);
     socketSprite->SetSource(&socket);
@@ -494,7 +494,7 @@ void Connection::OnInitGraphics(Renderer* renderer, int layer)
     lamp2 = entity->AddComponent<StateSprite>(renderer, layer);
     if (!lamp.Initialised())
     {
-        lamp.LoadAndInit("Textures/line_lamp.png", *renderer, SDL_GetWindowPixelFormat(renderer->GetWindow()->GetWindow()));
+        lamp.LoadAndInit("Textures/line_lamp.png", *renderer);
     }
     lamp1->AddState("lamp", &lamp, true, 2);
     lamp2->AddState("lamp", &lamp, true, 2);

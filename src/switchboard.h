@@ -48,7 +48,7 @@ private:
 
 };
 
-const Point socket_offset = {-16, -36};
+const Point socket_offset = {-13, -34};
 
 /// Forward declaration
 class Connection;
