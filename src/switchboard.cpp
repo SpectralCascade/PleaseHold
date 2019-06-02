@@ -100,19 +100,19 @@ void TrunkLine::OnInitGraphics(Renderer* renderer, int layer)
     {
         if (!head.Initialised())
         {
-            head.LoadAndInit("Textures/trs_jack.png", *renderer, SDL_GetWindowPixelFormat(renderer->GetWindow()->GetWindow()));
+            head.LoadAndInit("Textures/trs_jack.png", *renderer, SDL_PIXELFORMAT_ARGB8888);
         }
         if (!body.Initialised())
         {
-            body.LoadAndInit("Textures/trs_jack_body.png", *renderer, SDL_GetWindowPixelFormat(renderer->GetWindow()->GetWindow()));
+            body.LoadAndInit("Textures/trs_jack_body.png", *renderer, SDL_PIXELFORMAT_ARGB8888);
         }
         if (!pluggedIn.Initialised())
         {
-            pluggedIn.LoadAndInit("Textures/trs_jack_plugged_in.png", *renderer, SDL_GetWindowPixelFormat(renderer->GetWindow()->GetWindow()));
+            pluggedIn.LoadAndInit("Textures/trs_jack_plugged_in.png", *renderer, SDL_PIXELFORMAT_ARGB8888);
         }
         if (!holder.Initialised())
         {
-            holder.LoadAndInit("Textures/trs_jack_holder.png", *renderer, SDL_GetWindowPixelFormat(renderer->GetWindow()->GetWindow()));
+            holder.LoadAndInit("Textures/trs_jack_holder.png", *renderer, SDL_PIXELFORMAT_ARGB8888);
         }
         bodySprite->SetSource(&body);
         holderSprite->SetSource(&holder);
