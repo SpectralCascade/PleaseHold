@@ -30,6 +30,7 @@ void Game::OnInitGraphics(Renderer* renderer, int layer)
     }
     scoreText = entity->AddComponent<Text>(renderer, 4);
     scoreText->SetColor(colours::WHITE);
+    scoreText->SetRenderMode(RENDERTEXT_BLEND);
     scoreText->SetText(string("Score: ") + ToString(score));
     scoreText->TextToTexture(*renderer, font, 48);
     scoreText->position = Point(((renderer->GetWidth() / 8) * 7), 100);
@@ -62,14 +63,38 @@ void Game::Update()
     eventTimer.Update(delta.Time());
     if (eventTimer.GetTime() > eventTimeThreshold)
     {
-        eventTimeThreshold = (Uint32)rng->Int(2000, 30000);
-        SDL_Log("Random game event triggered!");
+        eventTimeThreshold = (Uint32)rng->Int(2000, MAX_WAIT_TIME);
         for (int i = 0; i < 10; i++)
         {
             TelephoneNode* node = *PickRandom(nodes, rng);
-            if (!node->IsActive()/* && !node->IsLinked()*/)
+            if (!node->IsActive() && !node->IsLinked() && targetNodes.find(node->GetId()) == targetNodes.end())
             {
-                NodeClient* c = new NodeClient(rng->Int(0, MAX_PATIENCE), this, node);
+                int target = 110;
+                for (int j = 0; j < 10; j++)
+                {
+                    target = 100 + ToInt(ToString(rng->Int(0, 7) + 1) + ToString(rng->Int(0, 5)));
+                    if (targetNodes.find(target) == targetNodes.end())
+                    {
+                        targetNodes.insert(target);
+                        break;
+                    }
+                }
+                NodeClient* c = new NodeClient(rng->Int(0, MAX_PATIENCE), this, node, target);
+                switch (rng->Int(0, 4))
+                {
+                case 0:
+                    c->requestMessage = string("Hello there. Please connect me to extension number ") + ToString(c->GetTargetExt()) + string(".");
+                    break;
+                case 1:
+                    c->requestMessage = string("Extension ") + ToString(c->GetTargetExt()) + string(" please.");
+                    break;
+                case 2:
+                    c->requestMessage = ToString(c->GetTargetExt()) + string(". Hurry up.");
+                    break;
+                default:
+                    c->requestMessage = string("Could you connect me to extension ") + ToString(c->GetTargetExt()) + string(" please?");
+                    break;
+                }
                 clients.insert(c);
                 break;
             }
@@ -93,6 +118,11 @@ void Game::Update()
         }
         SDL_Log("%s", c->deathMessage.c_str());
         clients.erase(c);
+        auto itr = targetNodes.find(c->GetTargetExt());
+        if (itr != targetNodes.end())
+        {
+            targetNodes.erase(itr);
+        }
         delete c;
         c = nullptr;
     }

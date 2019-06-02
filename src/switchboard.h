@@ -13,7 +13,7 @@ class TelephoneNode;
 class NodeClient
 {
 public:
-    NodeClient(int patience, void* g, TelephoneNode* n);
+    NodeClient(int patience, void* g, TelephoneNode* n, int targetId);
 
     void OnLink();
     void OnUnlink();
@@ -23,13 +23,20 @@ public:
     bool alive = true;
 
     string deathMessage;
+    string requestMessage;
 
     void* game;
 
     TelephoneNode* node;
 
+    void SetConnected(bool connect);
+
+    int GetTargetExt();
+
 private:
     int linkChanges = 0;
+
+    int targetExt;
 
     Clock clock;
 
@@ -174,9 +181,9 @@ public:
     /// Resets the connection
     void Reset();
 
-    void SetupInput(InputContext* ic);
-
     void* game;
+
+    TrunkLine* GetOtherLine(TrunkLine* line);
 
     StateSprite* lamp1;
     StateSprite* lamp2;

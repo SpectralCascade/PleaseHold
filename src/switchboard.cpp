@@ -3,13 +3,20 @@
 
 using namespace Ossium;
 
-NodeClient::NodeClient(int patience, void* g, TelephoneNode* n)
+NodeClient::NodeClient(int patience, void* g, TelephoneNode* n, int targetId)
 {
     game = g;
-    score = clamp(MAX_PATIENCE - patience, 5, MAX_PATIENCE);
+    score = clamp(MAX_PATIENCE - patience, 5, MAX_PATIENCE) * 10;
     waitTime = MIN_WAIT_TIME + (patience * 1000);
     node = n;
+    targetExt = targetId;
     node->SetClient(this);
+    deathMessage = "*Call Finished*";
+}
+
+int NodeClient::GetTargetExt()
+{
+    return targetExt;
 }
 
 void NodeClient::Update()
@@ -44,11 +51,12 @@ void NodeClient::Update()
         {
             /// Increment score for a successful call
             ((Game*)game)->score += score;
+            connected = false;
         }
         else
         {
             /// Decrement score for an unsuccessful call
-            ((Game*)game)->score -= (MAX_PATIENCE / 3) * 2;
+            ((Game*)game)->score -= (MAX_PATIENCE / 3) * 2 * 10;
         }
         alive = false;
     }
@@ -63,6 +71,16 @@ void NodeClient::OnUnlink()
 {
     clock.SetTime(0);
     linkChanges++;
+}
+
+void NodeClient::SetConnected(bool connect)
+{
+    connected = connect;
+    if (connected)
+    {
+        clock.SetTime(0);
+        linkChanges++;
+    }
 }
 
 REGISTER_COMPONENT(TrunkLine);
@@ -126,6 +144,30 @@ void TrunkLine::LinkTo(TelephoneNode* n)
     SetMod(colour);
     /// Make body sprite invisible
     bodySprite->SetSource(nullptr);
+    if (client != nullptr)
+    {
+        SDL_Log("%s", client->requestMessage.c_str());
+    }
+    else
+    {
+        TrunkLine* other = connection->GetOtherLine(this);
+        if (IsLinked() && other->client != nullptr)
+        {
+            if (node->GetId() == other->client->GetTargetExt())
+            {
+                /// Reset connection
+                SDL_Log("CONNECTION ESTABLISHED between %d and %d", node->GetId(), other->node->GetId());
+                other->client->SetConnected(true);
+                connection->lamp2->ChangeSubState(1);
+                connection->lamp1->ChangeSubState(1);
+            }
+            else
+            {
+                other->client->alive = false;
+                other->client->deathMessage = "You connected the wrong extension :(";
+            }
+        }
+    }
 }
 
 void TrunkLine::Unlink()
@@ -349,14 +391,17 @@ void TelephoneNode::SetPos(Point p)
 
 void TelephoneNode::Link(TrunkLine* trunkLine)
 {
-    Unlink();
+    if (IsLinked())
+    {
+        Unlink();
+    }
     link = trunkLine;
     if (link != nullptr)
     {
         if (client != nullptr)
         {
-            client->OnLink();
             link->OnClient(client);
+            client->OnLink();
         }
     }
 }
@@ -405,6 +450,18 @@ void TelephoneNode::SetClient(NodeClient* c)
     else
     {
         ChangeSubState(0);
+        if (IsLinked())
+        {
+            if (link == link->connection->line1)
+            {
+                link->connection->lamp2->ChangeSubState(0);
+            }
+            else
+            {
+                link->connection->lamp1->ChangeSubState(0);
+            }
+            link->OnClient(nullptr);
+        }
     }
 }
 
@@ -451,12 +508,18 @@ void Connection::SetRoot(Point p)
     lamp2->position = Point(lamp1->position.x + 32, lamp1->position.y);
 }
 
+TrunkLine* Connection::GetOtherLine(TrunkLine* line)
+{
+    return line == line1 ? line2 : line1;
+}
+
 void Connection::Reset()
 {
     line1->Reset();
     line2->Reset();
 }
 
-void Connection::SetupInput(InputContext* ic)
+bool Connection::IsActive()
 {
+    return line1 != nullptr && line2 != nullptr && line1->IsActive() && line2->IsActive();
 }

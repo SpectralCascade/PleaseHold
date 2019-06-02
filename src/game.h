@@ -9,7 +9,7 @@ using namespace Ossium;
 
 extern Font* font;
 
-const int MAX_WAIT_TIME = 30000;
+const int MAX_WAIT_TIME = 20000;
 const int MAX_PATIENCE = 20;
 const int MIN_WAIT_TIME = 5000;
 
@@ -40,6 +40,8 @@ private:
     Clock eventTimer;
 
     set<NodeClient*> clients;
+
+    set<int> targetNodes;
 
     Uint32 eventTimeThreshold = 5000;
 
