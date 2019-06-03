@@ -12,7 +12,7 @@ using namespace Ossium;
 
 extern Font* font;
 
-const int MAX_WAIT_TIME = 20000;
+extern int MAX_WAIT_TIME;
 const int MAX_PATIENCE = 20;
 const int MIN_WAIT_TIME = 5000;
 
@@ -127,6 +127,8 @@ public:
 
     bool IsTutorial();
 
+    void Restart();
+
     int GetTutorialStage();
 
     Tutorial* tutorial = nullptr;
@@ -135,9 +137,9 @@ public:
     /// That means that all clocks will pause when this clock pauses and so on.
     Clock gameTime;
 
-private:
     bool isTutorial = false;
 
+private:
     int oldScore = 0;
     float changeAlpha = 0;
     Uint8 alpha = 0;
@@ -166,6 +168,8 @@ private:
     Clock timeLeft;
 
     Clock eventTimer;
+
+    Clock endGameTimer;
 
     set<NodeClient*> clients;
 

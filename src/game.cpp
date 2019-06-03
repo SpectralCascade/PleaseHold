@@ -1,9 +1,13 @@
+#include <chrono>
+
 #include "game.h"
 
 using namespace Ossium;
 
 Font* font = nullptr;
 Game* theGame = nullptr;
+
+int MAX_WAIT_TIME = 12000;
 
 void GraphicRect::Render(Renderer& renderer)
 {
@@ -143,7 +147,7 @@ void Tutorial::Update()
         onNextUpdate = false;
         ShowPopup(true);
     }
-    if (stage == AWAIT_LINKAGE && !theGame->gameTime.IsPaused())
+    if ((stage == AWAIT_LINKAGE || stage == AWAIT_CONNECTION || stage == AWAIT_DISCONNECT) && !theGame->gameTime.IsPaused())
     {
         theGame->gameTime.SetPaused(true);
     }
@@ -207,14 +211,17 @@ int Game::GetTutorialStage()
     }
 }
 
+const SDL_Color LINE_COLOURS[8] = {colours::WHITE, colours::RED, (SDL_Color){200, 100, 0, 255}, colours::YELLOW, colours::GREEN, colours::CYAN, colours::BLUE, colours::MAGENTA};
+
 void Game::OnInitGraphics(Renderer* renderer, int layer)
 {
+    MAX_WAIT_TIME = 12000;
     r.x = 0;
     r.y = 0;
     r.w = 1024;
     r.h = 768;
     render = renderer;
-    rng = new Rand();
+    rng = new Rand(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
     renderer->SetDrawColour(200, 200, 200, 255);
     for (int i = 0; i < 6; i++)
     {
@@ -232,6 +239,8 @@ void Game::OnInitGraphics(Renderer* renderer, int layer)
         c->SetRoot(Point((renderer->GetWidth() / 2) - (64 * (4 - i)) + 32, 7 * 72 + 36));
         c->Reset();
         c->game = this;
+        c->line1->SetColour(LINE_COLOURS[i]);
+        c->line2->SetColour(LINE_COLOURS[i]);
         connections.push_back(c);
     }
     scoreText = entity->AddComponent<Text>(renderer, 8);
@@ -282,6 +291,7 @@ void Game::SetTutorial(Tutorial* t)
     tutorial = t;
     isTutorial = true;
     gameTime.SetPaused(true);
+    MAX_WAIT_TIME = 20000;
 }
 
 ActionOutcome Game::HandlePointer(const MouseInput& data)
@@ -298,14 +308,34 @@ ActionOutcome Game::HandlePointer(const MouseInput& data)
     return Ignore;
 }
 
+void Game::Restart()
+{
+    endGameTimer.SetPaused(true);
+    gameTime.SetPaused(false);
+    gameTime.SetTime(60000 * 5);
+    score = 0;
+    if (endText != nullptr)
+    {
+        endText->SetAlphaMod(0, true);
+    }
+    scoreText->position = Point(((1024 / 8) * 7), 100);
+    finished = false;
+    for (auto c : connections)
+    {
+        c->Reset();
+    }
+}
+
 void Game::Update()
 {
     gameTime.Update(delta.Time());
-    if (isTutorial && gameTime.IsPaused())
-    {
-    }
+    endGameTimer.Update(delta.Time());
     if (finished)
     {
+        if (endGameTimer.GetTime() == 0)
+        {
+            Restart();
+        }
         render->Enqueue(&r, 7);
         return;
     }
@@ -357,7 +387,7 @@ void Game::Update()
                 for (int j = 0; j < 10; j++)
                 {
                     target = 100 + ToInt(ToString(rng->Int(0, 7) + 1) + ToString(rng->Int(0, 5)));
-                    if (targetNodes.find(target) == targetNodes.end())
+                    if (targetNodes.find(target) == targetNodes.end() && target != node->GetId())
                     {
                         targetNodes.insert(target);
                         break;
@@ -391,7 +421,7 @@ void Game::Update()
                                        )
                     );
                     tutorial->AddPopup("We need to connect a trunk line to this extension.");
-                    tutorial->AddPopup("Down here we have several green-red pairs of trunk lines.",
+                    tutorial->AddPopup("Down here we have several colour coded pairs of trunk lines.",
                                        Point(1024 / 2, 768 / 8 * 7),
                                        Rect(100, 450, 800, 250)
                     );
@@ -417,6 +447,18 @@ void Game::Update()
     for (auto c : toRemove)
     {
         Log("[ext " + ToString(c->node->GetId()) + "] > \"" + c->deathMessage + "\"");
+        if (IsTutorial() && !tutorial->HasPopups())
+        {
+            if (tutorial->stage == TutorialStages::AWAIT_CALL_END)
+            {
+                tutorial->stage = TutorialStages::CALL_END;
+                tutorial->AddPopup("Great, the call has ended and both lamps have gone out under our line connection.");
+                tutorial->AddPopup("The more successful calls, the more points you will score.");
+                tutorial->AddPopup("Now we can go ahead and disconnect the lines because it's not an active connection anymore.");
+                tutorial->AddPopup("To do that, click \"Okay\" and right click both lines to disconnect them.");
+                tutorial->ShowPopup();
+            }
+        }
         if (c->node != nullptr)
         {
             c->node->SetClient(nullptr);
@@ -439,12 +481,19 @@ void Game::EndGame()
         SDL_Log("Game Over!");
         gameTime.SetPaused(true);
         scoreText->position = Point(1024 / 2, 768 / 2);
-        endText = entity->AddComponent<Text>(render, 8);
-        endText->SetText("Thanks for playing! :)");
-        endText->SetColor(colours::GREEN);
-        endText->SetRenderMode(RENDERTEXT_BLEND);
-        endText->TextToTexture(*render, font, 36);
-        endText->position = Point(scoreText->position.x, scoreText->position.y + 64);
+        if (endText == nullptr)
+        {
+            endText = entity->AddComponent<Text>(render, 8);
+            endText->SetText("Thanks for playing! The game restarts in 5 seconds :)");
+            endText->SetColor(colours::GREEN);
+            endText->SetRenderMode(RENDERTEXT_BLEND);
+            endText->TextToTexture(*render, font, 36);
+            endText->position = Point(scoreText->position.x, scoreText->position.y + 64);
+        }
+        endText->SetAlphaMod(255, true);
+        endGameTimer.SetTime(5000);
+        endGameTimer.Stretch(-1);
+        endGameTimer.SetPaused(false);
         finished = true;
     }
 }

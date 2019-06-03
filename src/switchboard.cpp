@@ -26,6 +26,10 @@ void NodeClient::Update()
     {
         return;
     }
+    if (theGame->IsTutorial() && !theGame->tutorial->HasPopups() && theGame->tutorial->stage == TutorialStages::AWAIT_CALL_END && clock.GetTime() < waitTime - 3000)
+    {
+        clock.SetTime(waitTime - 2000);
+    }
     if (linkChanges > 2)
     {
         clock.SetTime(waitTime + 1);
@@ -257,6 +261,10 @@ void TrunkLine::Render(Renderer& renderer)
 
 void TrunkLine::Reset()
 {
+    if (IsLinked())
+    {
+        Unlink();
+    }
     SetPosition(Point(root.x, root.y - 3 - (bodySprite->height) - (height / 2)));
 }
 
@@ -324,7 +332,7 @@ void TrunkLine::OnPointerDown(const MouseInput& data)
     if (theGame->IsTutorial())
     {
         int stage = theGame->tutorial->stage;
-        if (stage != FINISHED && stage != TutorialStages::AWAIT_LINKAGE && stage != TutorialStages::AWAIT_DISCONNECT && stage != TutorialStages::AWAIT_CONNECTION)
+        if ((stage != TutorialStages::FINISHED && stage != TutorialStages::AWAIT_LINKAGE && stage != TutorialStages::AWAIT_CONNECTION && stage != TutorialStages::AWAIT_DISCONNECT) || (data.type == MOUSE_BUTTON_LEFT && stage == TutorialStages::AWAIT_DISCONNECT))
         {
             return;
         }
@@ -342,9 +350,26 @@ void TrunkLine::OnPointerUp(const MouseInput& data)
     if (theGame->IsTutorial())
     {
         int stage = theGame->tutorial->stage;
-        if (stage != FINISHED && stage != TutorialStages::AWAIT_LINKAGE && stage != TutorialStages::AWAIT_DISCONNECT && stage != TutorialStages::AWAIT_CONNECTION)
+        Tutorial* t = theGame->tutorial;
+        if (stage != TutorialStages::FINISHED && stage != TutorialStages::AWAIT_LINKAGE && stage != TutorialStages::AWAIT_DISCONNECT && stage != TutorialStages::AWAIT_CONNECTION)
         {
             return;
+        }
+        else if (stage == TutorialStages::AWAIT_DISCONNECT)
+        {
+            if (data.type != MOUSE_BUTTON_LEFT && !connection->GetOtherLine(this)->IsLinked())
+            {
+                stage = TutorialStages::END;
+                t->AddPopup("Congratulations! You've learned the basics of being a switchboard operator!");
+                t->AddPopup("Now, show us what you've got and try n' score big!");
+                theGame->isTutorial = false;
+                MAX_WAIT_TIME = 12000;
+                t->ShowPopup();
+            }
+            else if (data.type == MOUSE_BUTTON_LEFT)
+            {
+                return;
+            }
         }
     }
     if (data.type == MOUSE_BUTTON_LEFT)
@@ -361,7 +386,7 @@ void TrunkLine::OnPointerUp(const MouseInput& data)
                     Tutorial* t = theGame->tutorial;
                     if (theGame->IsTutorial() && !t->HasPopups())
                     {
-                        if (t->stage == TutorialStages::AWAIT_LINKAGE && node->IsActive() && )
+                        if (t->stage == TutorialStages::AWAIT_LINKAGE && node->IsActive())
                         {
                             t->stage = TutorialStages::LINKAGE;
                             t->AddPopup("Excellent! Now we're connected to the caller we can listen to their request.");
@@ -377,7 +402,7 @@ void TrunkLine::OnPointerUp(const MouseInput& data)
                                         Point(1024 / 2, 768 / 3 * 2),
                                         Rect(100, 600, 800, 300)
                             );
-                            t->AddPopup("Go ahead and connect the correct trunk line to extension " + ToString(node->GetClient()->GetTargetExt()) + ".",
+                            t->AddPopup("Click \"Okay\" and then connect the matching trunk line to extension " + ToString(node->GetClient()->GetTargetExt()) + ".",
                                         Point(1024 / 2, 768 / 3 * 2),
                                         Rect(100, 600, 800, 300)
                             );
@@ -386,11 +411,20 @@ void TrunkLine::OnPointerUp(const MouseInput& data)
                         }
                         if (t->stage == TutorialStages::AWAIT_CONNECTION)
                         {
-                            if (GetOtherLine(this) == tutorialOther && tutorialOther->IsActive())
+                            if (connection->GetOtherLine(this) == tutorialOther && tutorialOther->IsActive())
                             {
                                 if (node->GetId() == tutorialOther->node->GetClient()->GetTargetExt())
                                 {
-                                    t->AddPopup("Good job! Now both lines are connected we can sit back until we get another call.");
+                                    t->stage = TutorialStages::CONNECTION;
+                                    t->AddPopup("Good job! Now both lines are connected we can sit back (for now).");
+                                    t->AddPopup("We know both lines have an active connection because their lamps are on.",
+                                                Point(1024 / 2, 768 / 2),
+                                                Rect(connection->lamp1->position.x - connection->lamp1->GetSourceWidth() / 2,
+                                                     connection->lamp1->position.y - connection->lamp1->GetSourceHeight() / 4,
+                                                     connection->lamp1->GetSourceWidth() * 2,
+                                                     connection->lamp1->GetSourceHeight() / 2
+                                                )
+                                    );
                                     t->AddPopup("In the main game, you should try and make these connections as soon as a caller appears.");
                                     t->AddPopup("You lose points if a caller gets connected to the wrong extension or if the call ends before you connect the caller.");
                                     t->AddPopup("On the contrary, you gain points when a call ends if the caller is connected to their target extension.");
@@ -400,6 +434,7 @@ void TrunkLine::OnPointerUp(const MouseInput& data)
                                 {
                                     t->AddPopup("Oof! Unfortunately, that was the wrong extension and you've lost some points as a result.");
                                     t->AddPopup("The caller has gone, so we'll have to wait for another call.");
+                                    connection->Reset();
                                     tutorialOther = nullptr;
                                     t->stage = TutorialStages::INTRO;
                                 }
@@ -429,7 +464,7 @@ void TrunkLine::OnDrag(const MouseInput& data)
     if (theGame->IsTutorial())
     {
         int stage = theGame->tutorial->stage;
-        if (stage != FINISHED && stage != TutorialStages::AWAIT_LINKAGE && stage != TutorialStages::AWAIT_DISCONNECT && stage != TutorialStages::AWAIT_CONNECTION)
+        if (stage != TutorialStages::FINISHED && stage != TutorialStages::AWAIT_LINKAGE && stage != TutorialStages::AWAIT_CONNECTION)
         {
             return;
         }
@@ -572,7 +607,6 @@ void Connection::OnInitGraphics(Renderer* renderer, int layer)
     line2 = entity->AddComponent<TrunkLine>(renderer, layer >= 0 ? layer + 1 : -1);
     line1->connection = this;
     line2->connection = this;
-    line2->SetColour(colours::GREEN);
     lamp1 = entity->AddComponent<StateSprite>(renderer, layer);
     lamp2 = entity->AddComponent<StateSprite>(renderer, layer);
     if (!lamp.Initialised())

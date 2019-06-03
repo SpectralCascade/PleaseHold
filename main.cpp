@@ -120,6 +120,7 @@ int main(int argc, char* argv[])
                 t->AddPopup("The main section has several 6 rows of extension number connections.", Point(1024 / 2, 768 / 4 * 3));
                 t->AddPopup("When someone makes a call, a light will turn on under the corresponding extension.", Point(1024 / 2, 768 / 4 * 3));
                 t->AddPopup("Let's wait a few moments for someone to call.", Point(1024 / 2, 768 / 4 * 3));
+                /// Make it easier for the tutorial
                 setupTutorial = true;
             }
         };
