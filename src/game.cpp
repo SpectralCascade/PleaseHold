@@ -312,7 +312,8 @@ void Game::Restart()
 {
     endGameTimer.SetPaused(true);
     gameTime.SetPaused(false);
-    gameTime.SetTime(60000 * 5);
+    timeLeft.SetPaused(false);
+    timeLeft.SetTime(60000 * 5);
     score = 0;
     if (endText != nullptr)
     {
