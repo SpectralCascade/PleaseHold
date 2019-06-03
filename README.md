@@ -8,4 +8,4 @@ If for whatever reason you want to build this code, follow these steps:
 3. Clone [Ossium](https://github.com/SpectralCascade/Ossium) into that directory.
 4. Do a `git checkout 8e867fa3758f71d8a15b449faf21dea82b78fa57` to get the version of Ossium that last worked with this repo.
 5. Setup SDL (here's a [handy tutorial link](http://lazyfoo.net/tutorials/SDL/01_hello_SDL/index.php))
-6. Compile the project using Code::Blocks 17.12 or newer, with a compiler that supports C++17 (I used GCC 8).
+6. Compile the PleaseHold project using Code::Blocks 17.12 or newer, with a compiler that supports C++17 (I used GCC 8).
