@@ -100,6 +100,8 @@ public:
     Connection* connection = nullptr;
 
 private:
+    static TrunkLine* tutorialOther;
+
     NodeClient* client = nullptr;
 
     /// Where the trunkLine sits

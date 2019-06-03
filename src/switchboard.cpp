@@ -92,6 +92,8 @@ Image TrunkLine::body;
 Image TrunkLine::pluggedIn;
 Image TrunkLine::holder;
 
+TrunkLine* TrunkLine::tutorialOther = nullptr;
+
 void TrunkLine::OnInitGraphics(Renderer* renderer, int layer)
 {
     GraphicComponent::OnInitGraphics(renderer, layer);
@@ -357,27 +359,53 @@ void TrunkLine::OnPointerUp(const MouseInput& data)
                 {
                     LinkTo(node);
                     Tutorial* t = theGame->tutorial;
-                    if (theGame->IsTutorial() && node->IsActive() && t->stage == TutorialStages::AWAIT_LINKAGE && !t->HasPopups())
+                    if (theGame->IsTutorial() && !t->HasPopups())
                     {
-                        t->stage = TutorialStages::LINKAGE;
-                        t->AddPopup("Excellent! Now we're connected to the caller we can listen to their request.");
-                        t->AddPopup("Below is the message board, showing recent messages from callers and other information.",
-                                    Point(1024 / 2, 768 / 3 * 2),
-                                    Rect(100, 600, 800, 300)
-                        );
-                        t->AddPopup("This particular caller wants us to connect them to extension " + ToString(node->GetClient()->GetTargetExt()) + ".",
-                                    Point(1024 / 2, 768 / 3 * 2),
-                                    Rect(100, 600, 800, 300)
-                        );
-                        t->AddPopup("In order to do this, we must use the trunk line next to our caller's trunk line.",
-                                    Point(1024 / 2, 768 / 3 * 2),
-                                    Rect(100, 600, 800, 300)
-                        );
-                        t->AddPopup("Go ahead and connect the correct trunk line to extension " + ToString(node->GetClient()->GetTargetExt()) + ".",
-                                    Point(1024 / 2, 768 / 3 * 2),
-                                    Rect(100, 600, 800, 300)
-                        );
-                        t->ShowPopup();
+                        if (t->stage == TutorialStages::AWAIT_LINKAGE && node->IsActive() && )
+                        {
+                            t->stage = TutorialStages::LINKAGE;
+                            t->AddPopup("Excellent! Now we're connected to the caller we can listen to their request.");
+                            t->AddPopup("Below is the message board, showing recent messages from callers and other information.",
+                                        Point(1024 / 2, 768 / 3 * 2),
+                                        Rect(100, 600, 800, 300)
+                            );
+                            t->AddPopup("This particular caller wants us to connect them to extension " + ToString(node->GetClient()->GetTargetExt()) + ".",
+                                        Point(1024 / 2, 768 / 3 * 2),
+                                        Rect(100, 600, 800, 300)
+                            );
+                            t->AddPopup("In order to do this, we must use the matching trunk line next to our caller's trunk line.",
+                                        Point(1024 / 2, 768 / 3 * 2),
+                                        Rect(100, 600, 800, 300)
+                            );
+                            t->AddPopup("Go ahead and connect the correct trunk line to extension " + ToString(node->GetClient()->GetTargetExt()) + ".",
+                                        Point(1024 / 2, 768 / 3 * 2),
+                                        Rect(100, 600, 800, 300)
+                            );
+                            t->ShowPopup();
+                            tutorialOther = this;
+                        }
+                        if (t->stage == TutorialStages::AWAIT_CONNECTION)
+                        {
+                            if (GetOtherLine(this) == tutorialOther && tutorialOther->IsActive())
+                            {
+                                if (node->GetId() == tutorialOther->node->GetClient()->GetTargetExt())
+                                {
+                                    t->AddPopup("Good job! Now both lines are connected we can sit back until we get another call.");
+                                    t->AddPopup("In the main game, you should try and make these connections as soon as a caller appears.");
+                                    t->AddPopup("You lose points if a caller gets connected to the wrong extension or if the call ends before you connect the caller.");
+                                    t->AddPopup("On the contrary, you gain points when a call ends if the caller is connected to their target extension.");
+                                    t->AddPopup("Let's wait for the call to end.");
+                                }
+                                else
+                                {
+                                    t->AddPopup("Oof! Unfortunately, that was the wrong extension and you've lost some points as a result.");
+                                    t->AddPopup("The caller has gone, so we'll have to wait for another call.");
+                                    tutorialOther = nullptr;
+                                    t->stage = TutorialStages::INTRO;
+                                }
+                                t->ShowPopup();
+                            }
+                        }
                     }
                     /// play plug-in sound
                     hit = true;
