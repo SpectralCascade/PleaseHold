@@ -25,7 +25,7 @@ public:
     string deathMessage;
     string requestMessage;
 
-    void* game;
+    void* game = nullptr;
 
     TelephoneNode* node;
 
@@ -40,7 +40,7 @@ private:
 
     Clock clock;
 
-    Clock* gameClock;
+    Clock* gameClock = nullptr;
 
     Uint32 waitTime;
 
@@ -113,7 +113,7 @@ private:
     /// The node this trunkLine is linked to
     int linked = -1;
 
-    SDL_Color colour = colours::RED;
+    SDL_Color colour = Colors::RED;
 
     static Image head;
     static Image body;
@@ -160,7 +160,7 @@ private:
 
     NodeClient* client = nullptr;
 
-    Text* numberText;
+    Text* numberText = nullptr;
 
     static Image socket;
     static Image lamp;
@@ -174,8 +174,8 @@ public:
 
     void OnInitGraphics(Renderer* renderer, int layer);
 
-    TrunkLine* line1;
-    TrunkLine* line2;
+    TrunkLine* line1 = nullptr;
+    TrunkLine* line2 = nullptr;
 
     /// Are both trunk lines linked to client nodes?
     bool IsActive();
@@ -185,12 +185,12 @@ public:
     /// Resets the connection
     void Reset();
 
-    void* game;
+    void* game = nullptr;
 
     TrunkLine* GetOtherLine(TrunkLine* line);
 
-    StateSprite* lamp1;
-    StateSprite* lamp2;
+    StateSprite* lamp1 = nullptr;
+    StateSprite* lamp2 = nullptr;
 
 private:
     static Image lamp;

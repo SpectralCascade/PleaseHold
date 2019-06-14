@@ -1,8 +1,8 @@
 #include "button.h"
 
 using namespace Ossium;
-using namespace Ossium::input;
-using namespace Ossium::structs;
+using namespace Ossium::Input;
+using namespace Ossium::Structs;
 
 inline namespace UI
 {

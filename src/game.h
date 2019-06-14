@@ -98,6 +98,17 @@ private:
 
 };
 
+extern AudioSource jack;
+extern AudioSource caller;
+extern AudioSource scoreAudio;
+extern AudioBus master;
+
+extern AudioClip plugin;
+extern AudioClip plugout;
+extern AudioClip ding;
+extern AudioClip badscore;
+extern AudioClip goodscore;
+
 class Game : public Component
 {
 public:
@@ -117,15 +128,19 @@ public:
 
     int score = 0;
 
-    Rand* rng;
+    Rand* rng = nullptr;
 
     void OnDestroy();
 
-    void Log(string message, SDL_Color colour = colours::WHITE);
+    void Log(string message, SDL_Color colour = Colors::WHITE);
+
+    void ClearLog();
 
     void SetTutorial(Tutorial* t);
 
     bool IsTutorial();
+
+    void PruneClients();
 
     void Restart();
 
@@ -139,37 +154,41 @@ public:
 
     bool isTutorial = false;
 
+    Image* regularButton = nullptr;
+
 private:
     int oldScore = 0;
     float changeAlpha = 0;
     Uint8 alpha = 0;
 
-    Text* scoreChangeText;
+    int clickRestartHandle = 0;
+
+    Text* scoreChangeText = nullptr;
 
     GraphicRect r;
 
-    Renderer* render;
+    Entity* restartButton = nullptr;
+
+    Renderer* render = nullptr;
 
     bool finished = false;
 
     void EndGame();
 
-    Text* endText;
+    Text* endText = nullptr;
 
-    Text* scoreText;
+    Text* scoreText = nullptr;
 
-    Text* timeLeftText;
+    Text* timeLeftText = nullptr;
 
     CircularBuffer<string>* messageStream;
-    Text** messageTexts;
+    Text** messageTexts = nullptr;
 
     bool cycleMessages = false;
 
     Clock timeLeft;
 
     Clock eventTimer;
-
-    Clock endGameTimer;
 
     set<NodeClient*> clients;
 
@@ -179,7 +198,11 @@ private:
 
     InputContext context;
 
-    MouseHandler* mouse;
+    InputGUI* inputGui = nullptr;
+
+    MouseHandler* mouse = nullptr;
+
+    bool doRestart = false;
 
 };
 

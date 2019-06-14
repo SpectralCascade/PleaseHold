@@ -5,7 +5,7 @@
 using namespace std;
 
 using namespace Ossium;
-using namespace Ossium::global;
+using namespace Ossium::Global;
 
 int main(int argc, char* argv[])
 {
@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
         b.sprite->position = Point(mainRenderer.GetWidth() / 2, (mainRenderer.GetHeight() / 6) * 4);
         text.position = b.sprite->position;
         text.SetText("Play");
-        text.SetColor(colours::BLACK);
+        text.SetColor(Colors::BLACK);
         text.SetRenderMode(TextRenderModes::RENDERTEXT_BLEND);
         text.TextToTexture(mainRenderer, &mainFont, 48);
         b.sprite->AddState("default", &buttonTexture, true, 3);
@@ -93,6 +93,7 @@ int main(int argc, char* argv[])
                 mainRenderer.Unregister(button.GetComponent<StateSprite>());
                 mainRenderer.Unregister(tutorialButton.GetComponent<StateSprite>());
                 game = world.AddComponent<Game>(&mainRenderer);
+                game->regularButton = &buttonTexture;
                 game->SetupInput(&mainInput);
             }
         };
@@ -106,6 +107,7 @@ int main(int argc, char* argv[])
                 mainRenderer.Unregister(button.GetComponent<StateSprite>());
                 mainRenderer.Unregister(tutorialButton.GetComponent<StateSprite>());
                 game = world.AddComponent<Game>(&mainRenderer);
+                game->regularButton = &buttonTexture;
                 game->SetupInput(&mainInput);
                 Tutorial* t = world.AddComponent<Tutorial>(&mainRenderer, 9);
                 tutorialGui.AddInteractable("tutorial", *t->okay);
@@ -145,7 +147,12 @@ int main(int argc, char* argv[])
             ECS.UpdateComponents();
 
             /// Rendering phase
-            mainRenderer.RenderPresent();
+            SDL_RenderClear(mainRenderer.GetRendererSDL());
+            mainRenderer.RenderPresent(true);
+            /// Because we're rendering manually, we can safely destroy any entities pending destruction before actually drawing them on the screen.
+            ECS.DestroyPending();
+            mainRenderer.SetDrawColor(Colors::BLACK);
+            SDL_RenderPresent(mainRenderer.GetRendererSDL());
 
             /// Time update
             delta.Update();

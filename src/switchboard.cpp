@@ -13,6 +13,7 @@ NodeClient::NodeClient(int patience, void* g, TelephoneNode* n, int targetId, Cl
     node->SetClient(this);
     gameClock = mainClock;
     deathMessage = "*Call Finished*";
+    caller.Play(&ding, 0.4f);
 }
 
 int NodeClient::GetTargetExt()
@@ -154,7 +155,7 @@ void TrunkLine::LinkTo(TelephoneNode* n)
     bodySprite->SetSource(nullptr);
     if (client != nullptr)
     {
-        theGame->Log("[ext " + ToString(client->node->GetId()) + "] > \"" + client->requestMessage + "\"", colours::YELLOW);
+        theGame->Log("[ext " + ToString(client->node->GetId()) + "] > \"" + client->requestMessage + "\"", Colors::YELLOW);
     }
     else
     {
@@ -164,7 +165,7 @@ void TrunkLine::LinkTo(TelephoneNode* n)
             if (node->GetId() == other->client->GetTargetExt())
             {
                 /// Reset connection
-                theGame->Log("CONNECTION ESTABLISHED between " + ToString(node->GetId()) + " and " + ToString(other->node->GetId()), colours::GREEN);
+                theGame->Log("CONNECTION ESTABLISHED between " + ToString(node->GetId()) + " and " + ToString(other->node->GetId()), Colors::GREEN);
                 other->client->SetConnected(true);
                 connection->lamp2->ChangeSubState(1);
                 connection->lamp1->ChangeSubState(1);
@@ -187,7 +188,7 @@ void TrunkLine::Unlink()
         node->Unlink();
         node = nullptr;
     }
-    SetMod(colours::WHITE);
+    SetMod(Colors::WHITE);
     SetSource(&head);
     bodySprite->SetSource(&body);
 }
@@ -248,7 +249,7 @@ void TrunkLine::SetPosition(Point p)
 void TrunkLine::Render(Renderer& renderer)
 {
     Texture::Render(renderer);
-    renderer.SetDrawColour(colour);
+    renderer.SetDrawColor(colour);
     if (!IsLinked())
     {
         Line(Point(root.x, root.y - 3), Point(bodySprite->position.x, bodySprite->position.y + (bodySprite->height / 2))).Draw(renderer);
@@ -341,6 +342,7 @@ void TrunkLine::OnPointerDown(const MouseInput& data)
     {
         Unlink();
         /// play pull out sound
+        jack.Play(&plugout, 0.4f);
     }
     SetPosition(Point(data.x, data.y));
 }
@@ -443,6 +445,7 @@ void TrunkLine::OnPointerUp(const MouseInput& data)
                         }
                     }
                     /// play plug-in sound
+                    jack.Play(&plugin, 0.4f);
                     hit = true;
                 }
                 break;
@@ -489,7 +492,7 @@ void TelephoneNode::OnInitGraphics(Renderer* renderer, int layer)
     AddState("lamp", &lamp, true, 2);
     socketSprite->SetSource(&socket);
     numberText = entity->AddComponent<Text>(renderer, 2);
-    numberText->SetColor(colours::BLACK);
+    numberText->SetColor(Colors::BLACK);
     numberText->SetRenderMode(RENDERTEXT_BLEND);
     numberText->SetText(ToString(id));
     numberText->TextToTexture(*renderer, font, 12);

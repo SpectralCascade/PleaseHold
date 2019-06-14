@@ -44,8 +44,8 @@
 		<Unit filename="Ossium/src/Ossium/basics.h" />
 		<Unit filename="Ossium/src/Ossium/callback.h" />
 		<Unit filename="Ossium/src/Ossium/circularbuffer.h" />
-		<Unit filename="Ossium/src/Ossium/colours.cpp" />
-		<Unit filename="Ossium/src/Ossium/colours.h" />
+		<Unit filename="Ossium/src/Ossium/colors.cpp" />
+		<Unit filename="Ossium/src/Ossium/colors.h" />
 		<Unit filename="Ossium/src/Ossium/config.cpp" />
 		<Unit filename="Ossium/src/Ossium/config.h" />
 		<Unit filename="Ossium/src/Ossium/csvdata.cpp" />
@@ -85,7 +85,6 @@
 		<Unit filename="Ossium/src/Ossium/renderer.cpp" />
 		<Unit filename="Ossium/src/Ossium/renderer.h" />
 		<Unit filename="Ossium/src/Ossium/resourcecontroller.h" />
-		<Unit filename="Ossium/src/Ossium/rig.h" />
 		<Unit filename="Ossium/src/Ossium/schemamodel.h" />
 		<Unit filename="Ossium/src/Ossium/serialisation.cpp" />
 		<Unit filename="Ossium/src/Ossium/serialisation.h" />
@@ -104,8 +103,6 @@
 		<Unit filename="Ossium/src/Ossium/texturepack.h" />
 		<Unit filename="Ossium/src/Ossium/time.cpp" />
 		<Unit filename="Ossium/src/Ossium/time.h" />
-		<Unit filename="Ossium/src/Ossium/transform.cpp" />
-		<Unit filename="Ossium/src/Ossium/transform.h" />
 		<Unit filename="Ossium/src/Ossium/tree.h" />
 		<Unit filename="Ossium/src/Ossium/vector.cpp" />
 		<Unit filename="Ossium/src/Ossium/vector.h" />

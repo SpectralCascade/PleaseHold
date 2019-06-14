@@ -4,8 +4,8 @@
 #include "../../Ossium/src/Ossium.h"
 
 using namespace Ossium;
-using namespace Ossium::input;
-using namespace Ossium::graphics;
+using namespace Ossium::Input;
+using namespace Ossium::Graphics;
 
 inline namespace UI
 {

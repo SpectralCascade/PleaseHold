@@ -11,7 +11,7 @@ int MAX_WAIT_TIME = 12000;
 
 void GraphicRect::Render(Renderer& renderer)
 {
-    renderer.SetDrawColour(colours::BLACK);
+    renderer.SetDrawColor(Colors::BLACK);
     DrawFilled(renderer);
 }
 
@@ -27,8 +27,8 @@ void Tutorial::OnInitGraphics(Renderer* renderer, int layer)
     popupText->SetBox(true);
     popupText->SetBoxPaddingWidth(12);
     popupText->SetBoxPaddingHeight(40);
-    popupText->SetBackgroundColor(colours::CYAN);
-    popupText->SetColor(colours::BLACK);
+    popupText->SetBackgroundColor(Colors::CYAN);
+    popupText->SetColor(Colors::BLACK);
     popupText->SetText("TUTORIAL");
     popupText->TextToTexture(*renderer, font, 18);
     /// button
@@ -44,7 +44,7 @@ void Tutorial::OnInitGraphics(Renderer* renderer, int layer)
         okay->sprite->AddState("default", &buttonTexture, true, 3);
     }
     buttonText->SetText("Okay");
-    buttonText->SetColor(colours::BLACK);
+    buttonText->SetColor(Colors::BLACK);
     buttonText->SetRenderMode(TextRenderModes::RENDERTEXT_BLEND);
     buttonText->TextToTexture(*renderer, font, 14);
 }
@@ -53,7 +53,7 @@ void Tutorial::Render(Renderer& renderer)
 {
     if (shroudActive)
     {
-        renderer.SetDrawColour((SDL_Color){0, 0, 0, 220});
+        renderer.SetDrawColor((SDL_Color){0, 0, 0, 220});
         for (int i = 0; i < 4; i++)
         {
             shrouds[i].DrawFilled(renderer);
@@ -188,6 +188,14 @@ void Tutorial::GoNext()
     }
 }
 
+AudioSource jack;
+AudioSource caller;
+AudioBus master;
+
+AudioClip plugin;
+AudioClip plugout;
+AudioClip ding;
+
 REGISTER_COMPONENT(Game);
 
 const int MESSAGE_OUTPUT_HEIGHT = (768 / 5);
@@ -211,7 +219,7 @@ int Game::GetTutorialStage()
     }
 }
 
-const SDL_Color LINE_COLOURS[8] = {colours::WHITE, colours::RED, (SDL_Color){200, 100, 0, 255}, colours::YELLOW, colours::GREEN, colours::CYAN, colours::BLUE, colours::MAGENTA};
+const SDL_Color LINE_COLOURS[8] = {Colors::WHITE, Colors::RED, (SDL_Color){200, 100, 0, 255}, Colors::YELLOW, Colors::GREEN, Colors::CYAN, Colors::BLUE, Colors::MAGENTA};
 
 void Game::OnInitGraphics(Renderer* renderer, int layer)
 {
@@ -222,7 +230,7 @@ void Game::OnInitGraphics(Renderer* renderer, int layer)
     r.h = 768;
     render = renderer;
     rng = new Rand(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-    renderer->SetDrawColour(200, 200, 200, 255);
+    renderer->SetDrawColor(200, 200, 200, 255);
     for (int i = 0; i < 6; i++)
     {
         for (int j = 0; j < 8; j++)
@@ -244,20 +252,20 @@ void Game::OnInitGraphics(Renderer* renderer, int layer)
         connections.push_back(c);
     }
     scoreText = entity->AddComponent<Text>(renderer, 8);
-    scoreText->SetColor(colours::WHITE);
+    scoreText->SetColor(Colors::WHITE);
     scoreText->SetRenderMode(RENDERTEXT_BLEND);
     scoreText->SetText(string("Score: ") + ToString(score));
     scoreText->TextToTexture(*renderer, font, 48);
     scoreText->position = Point(((renderer->GetWidth() / 8) * 7), 100);
     scoreChangeText = entity->AddComponent<Text>(renderer, 4);
-    scoreChangeText->SetColor(colours::GREEN);
+    scoreChangeText->SetColor(Colors::GREEN);
     scoreChangeText->SetRenderMode(RENDERTEXT_BLEND);
     scoreChangeText->SetText("+0");
     scoreChangeText->TextToTexture(*renderer, font, 48);
     scoreChangeText->position = Point(((renderer->GetWidth() / 8) * 7), (768 / 6) * 5);
     scoreChangeText->SetAlphaMod(0);
     timeLeftText = entity->AddComponent<Text>(renderer, 4);
-    timeLeftText->SetColor(colours::RED);
+    timeLeftText->SetColor(Colors::RED);
     timeLeftText->SetRenderMode(RENDERTEXT_BLEND);
     timeLeftText->SetText("0:00s");
     timeLeftText->TextToTexture(*renderer, font, 36);
@@ -267,17 +275,27 @@ void Game::OnInitGraphics(Renderer* renderer, int layer)
     for (int i = 0, counti = messageStream->maxSize(); i < counti; i++)
     {
         Text* t = entity->AddComponent<Text>(renderer, 6);
-        t->SetColor(colours::WHITE);
+        t->SetColor(Colors::WHITE);
         t->SetRenderMode(RENDERTEXT_BLEND);
         t->position = Point(1024 / 2, MESSAGE_OUTPUT_Y_POS + ((MESSAGE_OUTPUT_HEIGHT / counti) + (MESSAGE_OUTPUT_HEIGHT / (counti + 1)) * i));
         messageTexts[i] = t;
+    }
+    /// audio
+    jack.Link(&master);
+    caller.Link(&master);
+    scoreAudio.Link(&master);
+    if (!ding.Load("Audio/ding1.wav") || !plugin.Load("Audio/plugin.wav") || !plugout.Load("Audio/plugout.wav") || !badscore.Load("Audio/badscore.wav") || !goodscore.Load("Audio/goodscore.wav"))
+    {
+        SDL_Log("Error loading sounds! Mix_Error: %s", Mix_GetError());
     }
     theGame = this;
 }
 
 void Game::SetupInput(InputController* ic)
 {
+    inputGui = entity->AddComponent<InputGUI>(render, 9);
     ic->AddContext("game_input", &context);
+    ic->AddContext("restart_gui", inputGui);
     mouse = context.AddHandler<MouseHandler>();
     mouse->AddBindlessAction([&] (const MouseInput& data) { return this->HandlePointer(data); });
     /// Each game will last 5 minutes
@@ -310,11 +328,9 @@ ActionOutcome Game::HandlePointer(const MouseInput& data)
 
 void Game::Restart()
 {
-    endGameTimer.SetPaused(true);
     gameTime.SetPaused(false);
     timeLeft.SetPaused(false);
     timeLeft.SetTime(60000 * 5);
-    score = 0;
     if (endText != nullptr)
     {
         endText->SetAlphaMod(0, true);
@@ -325,19 +341,79 @@ void Game::Restart()
     {
         c->Reset();
     }
+    for (auto c : clients)
+    {
+        c->alive = false;
+    }
+    PruneClients();
+    oldScore = 0;
+    score = 0;
+    restartButton->GetComponent<Button>()->OnClicked -= clickRestartHandle;
+    restartButton->Destroy();
+    context.SetActive(true);
+    inputGui->SetActive(false);
+    doRestart = false;
+    ClearLog();
+}
+
+AudioClip badscore;
+AudioClip goodscore;
+AudioSource scoreAudio;
+
+void Game::PruneClients()
+{
+    vector<NodeClient*> toRemove;
+    for (auto c : clients)
+    {
+        c->Update();
+        if (!c->alive)
+        {
+            toRemove.push_back(c);
+        }
+    }
+    for (auto c : toRemove)
+    {
+        Log("[ext " + ToString(c->node->GetId()) + "] > \"" + c->deathMessage + "\"");
+        if (IsTutorial() && !tutorial->HasPopups())
+        {
+            if (tutorial->stage == TutorialStages::AWAIT_CALL_END)
+            {
+                tutorial->stage = TutorialStages::CALL_END;
+                tutorial->AddPopup("Great, the call has ended and both lamps have gone out under our line connection.");
+                tutorial->AddPopup("The more successful calls, the more points you will score.");
+                tutorial->AddPopup("Now we can go ahead and disconnect the lines because it's not an active connection anymore.");
+                tutorial->AddPopup("To do that, click \"Okay\" and right click both lines to disconnect them.");
+                tutorial->ShowPopup();
+            }
+        }
+        if (c->node != nullptr)
+        {
+            c->node->SetClient(nullptr);
+        }
+        clients.erase(c);
+        auto itr = targetNodes.find(c->GetTargetExt());
+        if (itr != targetNodes.end())
+        {
+            targetNodes.erase(itr);
+        }
+        delete c;
+        c = nullptr;
+    }
 }
 
 void Game::Update()
 {
     gameTime.Update(delta.Time());
-    endGameTimer.Update(delta.Time());
     if (finished)
     {
-        if (endGameTimer.GetTime() == 0)
+        if (doRestart)
         {
             Restart();
         }
-        render->Enqueue(&r, 7);
+        else
+        {
+            render->Enqueue(&r, 7);
+        }
         return;
     }
     if (oldScore != score)
@@ -348,12 +424,14 @@ void Game::Update()
         if (score - oldScore < 0)
         {
             scoreChangeText->SetText(ToString(difference));
-            scoreChangeText->SetColor(colours::RED);
+            scoreChangeText->SetColor(Colors::RED);
+            scoreAudio.Play(&badscore, 0.4f);
         }
         else
         {
             scoreChangeText->SetText("+" + ToString(difference));
-            scoreChangeText->SetColor(colours::GREEN);
+            scoreChangeText->SetColor(Colors::GREEN);
+            scoreAudio.Play(&goodscore, 0.4f);
         }
         scoreChangeText->position = Point(((render->GetWidth() / 8) * 7), (768 / 4) * 3);
         oldScore = score;
@@ -436,43 +514,7 @@ void Game::Update()
         }
         eventTimer.SetTime(0);
     }
-    vector<NodeClient*> toRemove;
-    for (auto c : clients)
-    {
-        c->Update();
-        if (!c->alive)
-        {
-            toRemove.push_back(c);
-        }
-    }
-    for (auto c : toRemove)
-    {
-        Log("[ext " + ToString(c->node->GetId()) + "] > \"" + c->deathMessage + "\"");
-        if (IsTutorial() && !tutorial->HasPopups())
-        {
-            if (tutorial->stage == TutorialStages::AWAIT_CALL_END)
-            {
-                tutorial->stage = TutorialStages::CALL_END;
-                tutorial->AddPopup("Great, the call has ended and both lamps have gone out under our line connection.");
-                tutorial->AddPopup("The more successful calls, the more points you will score.");
-                tutorial->AddPopup("Now we can go ahead and disconnect the lines because it's not an active connection anymore.");
-                tutorial->AddPopup("To do that, click \"Okay\" and right click both lines to disconnect them.");
-                tutorial->ShowPopup();
-            }
-        }
-        if (c->node != nullptr)
-        {
-            c->node->SetClient(nullptr);
-        }
-        clients.erase(c);
-        auto itr = targetNodes.find(c->GetTargetExt());
-        if (itr != targetNodes.end())
-        {
-            targetNodes.erase(itr);
-        }
-        delete c;
-        c = nullptr;
-    }
+    PruneClients();
 }
 
 void Game::EndGame()
@@ -485,16 +527,32 @@ void Game::EndGame()
         if (endText == nullptr)
         {
             endText = entity->AddComponent<Text>(render, 8);
-            endText->SetText("Thanks for playing! The game restarts in 5 seconds :)");
-            endText->SetColor(colours::GREEN);
+            endText->SetText("Thanks for playing! :)");
+            endText->SetColor(Colors::GREEN);
             endText->SetRenderMode(RENDERTEXT_BLEND);
             endText->TextToTexture(*render, font, 36);
             endText->position = Point(scoreText->position.x, scoreText->position.y + 64);
         }
-        endText->SetAlphaMod(255, true);
-        endGameTimer.SetTime(5000);
-        endGameTimer.Stretch(-1);
-        endGameTimer.SetPaused(false);
+        if (endText != nullptr)
+        {
+            endText->SetAlphaMod(255, true);
+        }
+        restartButton = entity->CreateChild();
+        Button* actualButton = restartButton->AddComponent<Button>(render, 8);
+        Text* restartText = restartButton->AddComponent<Text>(render, 9);
+        restartText->SetText("Replay");
+        restartText->SetColor(Colors::BLACK);
+        restartText->TextToTexture(*render, font, 36);
+        restartText->position = Point(1024 / 2, (768 / 4 * 3));
+        actualButton->sprite->position = restartText->position;
+        actualButton->sprite->AddState("default", regularButton, true, 3);
+        clickRestartHandle = actualButton->OnClicked += [&] (const Button& bcaller) {
+            this->doRestart = true;
+        };
+        context.SetActive(false);
+        inputGui->RemoveAll();
+        inputGui->AddInteractable("restart button", *actualButton);
+        inputGui->SetActive(true);
         finished = true;
     }
 }
@@ -532,3 +590,14 @@ void Game::Log(string message, SDL_Color colour)
     messageTexts[messageStream->GetBackIndex()]->SetText(message);
     messageTexts[messageStream->GetBackIndex()]->TextToTexture(*render, font, 16);
 }
+
+void Game::ClearLog()
+{
+    for (int i = 0, counti = messageStream->size(); i < counti; i++)
+    {
+        messageTexts[i]->SetColor(Colors::TRANSPARENT);
+        messageTexts[i]->TextToTexture(*render, font, 16);
+        messageStream->pop_back();
+    }
+}
+
