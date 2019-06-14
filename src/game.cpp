@@ -301,7 +301,7 @@ void Game::SetupInput(InputController* ic)
     /// Each game will last 5 minutes
     timeLeft.SetTime(60000 * 5);
     /// Reverse the timer so it counts down
-    timeLeft.Stretch(-1);
+    timeLeft.Scale(-1);
 }
 
 void Game::SetTutorial(Tutorial* t)
@@ -597,7 +597,7 @@ void Game::ClearLog()
     {
         messageTexts[i]->SetColor(Colors::TRANSPARENT);
         messageTexts[i]->TextToTexture(*render, font, 16);
-        messageStream->pop_back();
     }
+    messageStream->drop_back_to(0);
 }
 
